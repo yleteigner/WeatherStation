@@ -19,6 +19,13 @@ import java.net.Socket;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.rrd4j.core.RrdDb;
+import org.rrd4j.core.RrdDef;
+import org.rrd4j.core.Sample;
+
+import static org.rrd4j.DsType.*;
+import static org.rrd4j.ConsolFun.*;
+
 /**
  * An example full-screen activity that shows and hides the system UI (i.e.
  * status bar and navigation/system bar) with user interaction.
@@ -130,6 +137,27 @@ public class WeatherActivity extends ActionBarActivity {
         updateConversationHandler = new Handler();
         this.serverThread = new Thread(new ServerThread());
         this.serverThread.start();
+
+        RrdDef rrdDef = new RrdDef("path", 300);
+        rrdDef.addArchive(AVERAGE, 0.5, 1, 600); // 1 step, 600 rows
+        rrdDef.addArchive(AVERAGE, 0.5, 6, 700); // 6 steps, 700 rows
+        rrdDef.addArchive(MAX, 0.5, 1, 600);
+
+        RrdDb rrdDb = null;
+        try {
+            rrdDb = new RrdDb(rrdDef);
+            Sample sample = rrdDb.createSample();
+            int index = 1;
+            while (index<2) {
+                sample.setTime(System.currentTimeMillis());
+                sample.setValue("inbytes", 0);
+                sample.setValue("outbytes", 1);
+                sample.update();
+            }
+            rrdDb.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
